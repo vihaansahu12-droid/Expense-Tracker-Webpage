@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paisa Kahan Gaya? – My Money Tracker</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d1d1b;--mute:#6b6b66;--line:#e6e2d8;--acc:#0f766e;--in:#15803d;--out:#c2410c;--bar:#0f766e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121413;--card:#1c1f1d;--ink:#eeeee8;--mute:#9a9a92;--line:#2c302d;--acc:#2dd4bf;--in:#4ade80;--out:#fb923c;--bar:#2dd4bf;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121413;--card:#1c1f1d;--ink:#eeeee8;--mute:#9a9a92;--line:#2c302d;--acc:#2dd4bf;--in:#4ade80;--out:#fb923c;--bar:#2dd4bf;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.4rem;margin:0 0 2px}
+.sub{color:var(--mute);margin:0 0 18px;font-size:.92rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.bal{text-align:center}
+.bal small{color:var(--mute);display:block}
+.bal .big{font-size:2.6rem;font-weight:800;letter-spacing:-1px}
+.neg{color:var(--out)}
+.row3{display:flex;gap:10px;margin-top:10px}
+.row3>div{flex:1;background:var(--bg);border-radius:12px;padding:10px;text-align:center}
+.row3 b{display:block;font-size:1.1rem}
+.in{color:var(--in)}.out{color:var(--out)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+h2{font-size:1rem;margin:0 0 10px}
+label{display:block;font-size:.8rem;color:var(--mute);margin:8px 0 3px}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:11px 14px}
+.add{width:100%;margin-top:12px;background:var(--acc);color:#fff;font-weight:700}
+.add.red{background:var(--out)}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:8px 12px;font-size:.85rem}
+.cat{margin:10px 0}
+.cat .t{display:flex;justify-content:space-between;font-size:.92rem}
+.track{height:10px;background:var(--bg);border-radius:6px;margin-top:4px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--bar);border-radius:6px}
+.tx{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.tx:last-child{border:0}
+.tx .m{flex:1;min-width:0}
+.tx .m span{display:block;color:var(--mute);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx button{background:none;color:var(--mute);padding:4px 8px}
+.empty{color:var(--mute);font-size:.9rem;margin:6px 0}
+.hide{display:none}
+#fromOther,#catOther{margin-top:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#msg{color:var(--acc);font-size:.85rem;min-height:1.2em;margin-top:6px}
+</style>
+</head>
+<body>
+<main id="auth">
+<h1>Paisa kahan gaya? 💸</h1>
+<p class="sub">Log in to see your money, or create a new account.</p>
+<div class="card">
+<label>Username</label><input id="u" autocomplete="username" autocapitalize="none">
+<label>Password</label><input id="p" type="password" autocomplete="current-password">
+<button class="add" id="login">Log in</button>
+<button class="ghost" id="signup" style="width:100%;margin-top:8px">Create new account</button>
+<div id="amsg" style="color:var(--out);font-size:.85rem;min-height:1.2em;margin-top:8px"></div>
+</div>
+</main>
+<main id="app" class="hide">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><h1>Paisa kahan gaya? 💸</h1><div class="sub" id="who" style="margin:0"></div></div><button class="ghost" id="logout">Log out</button></div>
+<p class="sub">Everything Mumma and Papa send, and every rupee you spend, in one place.</p>
+
+<div class="card bal">
+  <small>Left in your pocket</small>
+  <div class="big" id="bal">₹0</div>
+  <div class="row3">
+    <div><small>Received</small><b class="in" id="tin">₹0</b></div>
+    <div><small>Spent</small><b class="out" id="tout">₹0</b></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>➕ Money received</h2>
+    <label>From</label>
+    <select id="from"><option>Mumma</option><option>Papa</option><option>Other</option></select>
+    <input id="fromOther" class="hide" placeholder="Who sent it? e.g. Didi, Nani">
+    <label>Amount (₹)</label>
+    <input id="inAmt" type="number" inputmode="decimal" min="0" placeholder="2000">
+    <label>Note (optional)</label>
+    <input id="inNote" placeholder="e.g. monthly pocket money">
+    <label>Date</label>
+    <input id="inDate" type="date">
+    <button class="add" id="addIn">Add money</button>
+  </div>
+  <div class="card">
+    <h2>➖ I spent</h2>
+    <label>On what</label>
+    <select id="cat"><option>Food</option><option>Travel</option><option>Books &amp; Stationery</option><option>Rent / Hostel</option><option>Recharge &amp; Internet</option><option>Friends &amp; Outings</option><option>Shopping</option><option>Other</option></select>
+    <input id="catOther" class="hide" placeholder="What was it? e.g. haircut, gift">
+    <label>Amount (₹)</label>
+    <input id="outAmt" type="number" inputmode="decimal" min="0" placeholder="150">
+    <label>Note (optional)</label>
+    <input id="outNote" placeholder="e.g. canteen lunch">
+    <label>Date</label>
+    <input id="outDate" type="date">
+    <button class="add red" id="addOut">Add expense</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Where did it go?</h2>
+  <div id="cats"></div>
+</div>
+
+<div class="card">
+  <h2>All entries</h2>
+  <div id="list"></div>
+  <div class="actions">
+    <button class="add" id="pdf" style="margin-top:0;width:auto">📄 Download PDF report</button>
+    <button class="ghost" id="copy">📋 Copy summary</button>
+    <button class="ghost" id="reset">Clear everything</button>
+  </div>
+  <div id="msg"></div>
+</div>
+<p class="sub">Accounts and entries are saved in this browser only, on this device.</p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</main>
+
+<script>
+var KEY="",data=[],user="";
+function save(){if(!KEY)return;try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+function $(id){return document.getElementById(id)}
+function today(){var n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
+$("inDate").value=$("outDate").value=today();
+$("inDate").max=$("outDate").max=today();
+$("from").onchange=function(){$("fromOther").className=this.value==="Other"?"":"hide"};
+$("cat").onchange=function(){$("catOther").className=this.value==="Other"?"":"hide"};
+function inr(n){return "₹"+Math.round(n).toLocaleString("en-IN")}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function add(type,label,amt,note,date,sub){
+  amt=parseFloat(amt);
+  if(!(amt>0)){$("msg").textContent="Enter an amount first.";return false}
+  var d=date?new Date(date+"T12:00:00").toISOString():new Date().toISOString();
+  data.push({id:Date.now(),type:type,label:label,sub:sub||"",amt:amt,note:note||"",d:d});
+  data.sort(function(a,b){return new Date(b.d)-new Date(a.d)||b.id-a.id});
+  save();render();$("msg").textContent="";return true;
+}
+$("addIn").onclick=function(){var l=$("from").value==="Other"?($("fromOther").value.trim()||"Other"):$("from").value;if(add("in",l,$("inAmt").value,$("inNote").value,$("inDate").value)){$("inAmt").value="";$("inNote").value="";$("fromOther").value=""}};
+$("addOut").onclick=function(){var s=$("cat").value==="Other"?$("catOther").value.trim():"";if(add("out",$("cat").value,$("outAmt").value,$("outNote").value,$("outDate").value,s)){$("outAmt").value="";$("outNote").value="";$("catOther").value=""}};
+function totals(){
+  var i=0,o=0,c={};
+  data.forEach(function(x){if(x.type==="in")i+=x.amt;else{o+=x.amt;c[x.label]=(c[x.label]||0)+x.amt}});
+  return{i:i,o:o,c:c};
+}
+function render(){
+  var t=totals(),b=t.i-t.o;
+  $("bal").textContent=(b<0?"-":"")+inr(Math.abs(b));
+  $("bal").className="big"+(b<0?" neg":"");
+  $("tin").textContent=inr(t.i);$("tout").textContent=inr(t.o);
+  var keys=Object.keys(t.c).sort(function(a,b){return t.c[b]-t.c[a]});
+  $("cats").innerHTML=keys.length?keys.map(function(k){
+    var p=t.o?t.c[k]/t.o*100:0;
+    return '<div class="cat"><div class="t"><span>'+esc(k)+'</span><span>'+inr(t.c[k])+' · '+Math.round(p)+'%</span></div><div class="track"><i style="width:'+p+'%"></i></div></div>';
+  }).join(""):'<p class="empty">No expenses yet. Add one above.</p>';
+  $("list").innerHTML=data.length?data.map(function(x){
+    var d=new Date(x.d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+    return '<div class="tx"><div class="m"><b>'+(x.type==="in"?"From ":"")+esc(x.label)+(x.sub?" · "+esc(x.sub):"")+'</b><span>'+d+(x.note?" · "+esc(x.note):"")+'</span></div><b class="'+(x.type==="in"?"in":"out")+'">'+(x.type==="in"?"+":"−")+inr(x.amt)+'</b><button data-id="'+x.id+'" aria-label="Delete">✕</button></div>';
+  }).join(""):'<p class="empty">Nothing here yet.</p>';
+}
+$("list").onclick=function(e){
+  var id=e.target.getAttribute&&e.target.getAttribute("data-id");
+  if(id){data=data.filter(function(x){return String(x.id)!==id});save();render()}
+};
+function hex(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
+async function hash(pw,salt){return hex(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(salt+":"+pw)))}
+function users(){try{return JSON.parse(localStorage.getItem("paisa-users")||"{}")}catch(e){return{}}}
+function enter(n){
+  user=n;KEY="paisa-data-"+n;data=[];
+  try{data=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){}
+  try{sessionStorage.setItem("paisa-session",n)}catch(e){}
+  $("auth").className="hide";$("app").className="";$("who").textContent="Hi, "+n+" 👋";
+  $("u").value=$("p").value="";$("amsg").textContent="";render();
+}
+$("signup").onclick=async function(){
+  var n=$("u").value.trim().toLowerCase(),p=$("p").value,us=users();
+  if(n.length<3||p.length<4){$("amsg").textContent="Username needs 3+ letters and password 4+ characters.";return}
+  if(us[n]){$("amsg").textContent="That username is taken. Try another or log in.";return}
+  var salt=hex(crypto.getRandomValues(new Uint8Array(8)));
+  us[n]={salt:salt,h:await hash(p,salt)};
+  try{localStorage.setItem("paisa-users",JSON.stringify(us))}catch(e){$("amsg").textContent="Can’t save account in this browser.";return}
+  enter(n);
+};
+$("login").onclick=async function(){
+  var n=$("u").value.trim().toLowerCase(),p=$("p").value,u=users()[n];
+  if(!u||(await hash(p,u.salt))!==u.h){$("amsg").textContent="Wrong username or password.";return}
+  enter(n);
+};
+$("p").onkeydown=function(e){if(e.key==="Enter")$("login").click()};
+$("logout").onclick=function(){
+  user="";KEY="";data=[];try{sessionStorage.removeItem("paisa-session")}catch(e){}
+  $("app").className="hide";$("auth").className="";
+};
+function clean(s){return String(s).replace(/\u20B9/g,"Rs ").replace(/[^\x20-\x7E\u00A0-\u00FF]/g,"").trim()}
+$("pdf").onclick=function(){
+  var msg=$("msg");
+  if(!data.length){msg.textContent="Add some entries first.";return}
+  if(!window.jspdf){msg.textContent="PDF tool didn’t load. Check your internet and reload.";return}
+  var doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),W=210,M=14,y=0,t=totals();
+  function rs(n){return "Rs "+Math.round(n).toLocaleString("en-IN")}
+  function fd(d){return d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}
+  function h(s){doc.setTextColor(29,29,27);doc.setFont("helvetica","bold");doc.setFontSize(12);doc.text(s,M,y);doc.setFont("helvetica","normal");y+=7}
+  function need(n){if(y+n>284){doc.addPage();y=18}}
+  doc.setFillColor(15,118,110);doc.rect(0,0,W,30,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(20);doc.text("My Money Report",M,14);
+  doc.setFont("helvetica","normal");doc.setFontSize(10);
+  var ds=data.map(function(x){return new Date(x.d)}).sort(function(a,b){return a-b});
+  doc.text(fd(ds[0])+" to "+fd(ds[ds.length-1])+"   |   Generated on "+fd(new Date()),M,22);
+  y=40;
+  var boxes=[["Received",t.i,[21,128,61]],["Spent",t.o,[194,65,12]],["Left",t.i-t.o,[15,118,110]]],bw=(W-2*M-12)/3;
+  boxes.forEach(function(b,i){var x=M+i*(bw+6);doc.setFillColor(246,244,239);doc.roundedRect(x,y,bw,22,3,3,"F");doc.setTextColor(107,107,102);doc.setFontSize(9);doc.text(b[0],x+bw/2,y+8,{align:"center"});doc.setTextColor(b[2][0],b[2][1],b[2][2]);doc.setFont("helvetica","bold");doc.setFontSize(14);doc.text((b[1]<0?"-":"")+rs(Math.abs(b[1])),x+bw/2,y+17,{align:"center"});doc.setFont("helvetica","normal")});
+  y+=34;
+  var from={};data.forEach(function(x){if(x.type==="in")from[x.label]=(from[x.label]||0)+x.amt});
+  var fk=Object.keys(from);
+  if(fk.length){need(14+fk.length*6);h("Money received from");fk.forEach(function(k){doc.setFontSize(10);doc.setTextColor(29,29,27);doc.text(clean(k),M,y);doc.text(rs(from[k]),W-M,y,{align:"right"});y+=6});y+=6}
+  var keys=Object.keys(t.c).sort(function(a,b){return t.c[b]-t.c[a]});
+  if(keys.length){
+    need(24);h("Where did it go?");
+    keys.forEach(function(k){
+      need(12);var p=t.o?t.c[k]/t.o*100:0;
+      doc.setFontSize(10);doc.setTextColor(29,29,27);doc.text(clean(k),M,y);
+      doc.text(rs(t.c[k])+"  |  "+Math.round(p)+"%",W-M,y,{align:"right"});
+      doc.setFillColor(230,226,216);doc.roundedRect(M,y+2,W-2*M,3,1.5,1.5,"F");
+      var w=(W-2*M)*p/100;doc.setFillColor(15,118,110);
+      if(w>=3)doc.roundedRect(M,y+2,w,3,1.5,1.5,"F");else if(w>0)doc.rect(M,y+2,w,3,"F");
+      y+=11;
+    });
+    y+=4;
+  }
+  need(24);h("All entries");
+  function head(){doc.setFillColor(15,118,110);doc.rect(M,y-4.5,W-2*M,7,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text("Date",M+2,y);doc.text("Type",M+30,y);doc.text("Details",M+52,y);doc.text("Amount",W-M-2,y,{align:"right"});doc.setFont("helvetica","normal");y+=7}
+  head();
+  data.forEach(function(x,i){
+    var desc=x.type==="in"?"From "+x.label+(x.note?" - "+x.note:""):x.label+(x.sub?" ("+x.sub+")":"")+(x.note?" - "+x.note:"");
+    var lines=doc.splitTextToSize(clean(desc),84),hg=lines.length*4.6+2.4;
+    if(y+hg>284){doc.addPage();y=18;head()}
+    if(i%2===0){doc.setFillColor(246,244,239);doc.rect(M,y-4,W-2*M,hg,"F")}
+    doc.setFontSize(9);doc.setTextColor(29,29,27);
+    doc.text(new Date(x.d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"2-digit"}),M+2,y);
+    doc.text(x.type==="in"?"Received":"Spent",M+30,y);
+    doc.text(lines,M+52,y);
+    if(x.type==="in")doc.setTextColor(21,128,61);else doc.setTextColor(194,65,12);
+    doc.text((x.type==="in"?"+":"-")+rs(x.amt),W-M-2,y,{align:"right"});
+    y+=hg;
+  });
+  var n=doc.getNumberOfPages();
+  for(var i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,150,145);doc.text("Page "+i+" of "+n,W/2,291,{align:"center"})}
+  doc.save("money-report-"+today()+".pdf");
+  msg.textContent="PDF downloaded!";
+};
+$("reset").onclick=function(){if(confirm("Delete all entries?")){data=[];save();render()}};
+$("copy").onclick=function(){
+  var t=totals(),from={};
+  data.forEach(function(x){if(x.type==="in")from[x.label]=(from[x.label]||0)+x.amt});
+  var s="My money summary\n";
+  Object.keys(from).forEach(function(k){s+="Received from "+k+": "+inr(from[k])+"\n"});
+  s+="Total received: "+inr(t.i)+"\n\nSpent:\n";
+  Object.keys(t.c).sort(function(a,b){return t.c[b]-t.c[a]}).forEach(function(k){s+="- "+k+": "+inr(t.c[k])+"\n"});
+  s+="Total spent: "+inr(t.o)+"\nRemaining: "+inr(t.i-t.o);
+  function ok(){$("msg").textContent="Copied! Paste it in WhatsApp."}
+  try{navigator.clipboard.writeText(s).then(ok,function(){$("msg").textContent="Couldn’t copy on this device."})}catch(e){$("msg").textContent="Couldn’t copy on this device."}
+};
+var ss="";try{ss=sessionStorage.getItem("paisa-session")||""}catch(e){}
+if(ss&&users()[ss])enter(ss);
+</script>
+</body>
+</html>
